@@ -140,16 +140,55 @@ class TicTacToeAI:
 
         self.canvas.delete("all")
         self.canvas.create_text(size_of_board / 2, size_of_board / 4, font="Arial 30 bold", fill=color, text=text)
-        score_text = f"Điểm số:\nX: {self.X_score} | O: {self.O_score}"
+
+        # Hiển thị điểm số
+        score_text = f"Điểm số:\nX: {self.X_score}\nO: {self.O_score}"
         self.canvas.create_text(size_of_board / 2, size_of_board / 2, font="Arial 20 bold", fill="black", text=score_text)
-        self.canvas.create_text(size_of_board / 2, size_of_board / 1.5, font="Arial 20 bold", fill="green", text="Chơi lại", tags="reset", activefill="limegreen")
-        self.canvas.create_text(size_of_board / 2, size_of_board / 1.3, font="Arial 20 bold", fill="red", text="Thoát", tags="exit", activefill="darkred")
+
+        # Tọa độ nút
+        btn_width = 150
+        btn_height = 50
+
+        # Vẽ nút "Chơi lại"
+        x1 = size_of_board / 2 - btn_width / 2
+        y1 = size_of_board / 1.5 - btn_height / 2
+        x2 = x1 + btn_width
+        y2 = y1 + btn_height
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill="white", outline="green", width=3, tags="reset_box")
+        self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text="Chơi lại", fill="green",
+                                font="Arial 20 bold", tags="reset", activefill="limegreen")
+
+        # Vẽ nút "Thoát"
+        x1 = size_of_board / 2 - btn_width / 2
+        y1 = size_of_board / 1.3 - btn_height / 2
+        x2 = x1 + btn_width
+        y2 = y1 + btn_height
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill="white", outline="red", width=3, tags="exit_box")
+        self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text="Thoát", fill="red",
+                                font="Arial 20 bold", tags="exit", activefill="darkred")
 
         self.window.bind("<Button-1>", self.restart_game)
         self.reset_board = True
 
+
     def restart_game(self, event):
-        if size_of_board / 2 - 50 < event.x < size_of_board / 2 + 50 and size_of_board / 1.5 - 20 < event.y < size_of_board / 1.5 + 20:
+        x, y = event.x, event.y
+
+        # Nút "Chơi lại"
+        btn_width = 150
+        btn_height = 50
+        rx1 = size_of_board / 2 - btn_width / 2
+        ry1 = size_of_board / 1.5 - btn_height / 2
+        rx2 = rx1 + btn_width
+        ry2 = ry1 + btn_height
+
+        # Nút "Thoát"
+        ex1 = size_of_board / 2 - btn_width / 2
+        ey1 = size_of_board / 1.3 - btn_height / 2
+        ex2 = ex1 + btn_width
+        ey2 = ey1 + btn_height
+
+        if rx1 < x < rx2 and ry1 < y < ry2:
             self.canvas.delete("all")
             self.initialize_board()
             self.board_status = np.zeros((grid_size, grid_size))
@@ -160,9 +199,11 @@ class TicTacToeAI:
             self.tie = False
             self.winning_cells = []
             self.window.bind("<Button-1>", self.click)
-        elif size_of_board / 2 - 50 < event.x < size_of_board / 2 + 50 and size_of_board / 1.3 - 20 < event.y < size_of_board / 1.3 + 20:
+
+        elif ex1 < x < ex2 and ey1 < y < ey2:
             self.window.destroy()
             subprocess.Popen([sys.executable, "caro_game.py"], shell=True)
+
 
     def click(self, event):
         grid_pos = [event.x, event.y]
@@ -175,8 +216,10 @@ class TicTacToeAI:
                 self.player_X_turns = False
                 if not self.is_gameover():
                     self.make_ai_move()
-            if self.is_gameover():
+            if self.is_gameover() and not self.reset_board:
+                self.reset_board = True  # Ngăn gọi lại lần nữa
                 self.display_gameover()
+
 
     def make_ai_move(self):
         ai = HeuristicAI(self.board_status, grid_size)
@@ -184,7 +227,8 @@ class TicTacToeAI:
         if move:
             self.draw_O(move)
             self.board_status[move[0]][move[1]] = 1
-            if self.is_gameover():
+            if self.is_gameover() and not self.reset_board:
+                self.reset_board = True
                 self.display_gameover()
             else:
                 self.player_X_turns = True
