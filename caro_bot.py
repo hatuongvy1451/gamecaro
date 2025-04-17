@@ -145,7 +145,7 @@ class TicTacToeAI:
         self.canvas.create_text(size_of_board / 2, size_of_board / 4, font="Arial 30 bold", fill=color, text=text)
 
         # Hiển thị điểm số
-        score_text = f"Điểm số - X: {self.X_score} | O: {self.O_score}"
+        score_text = f"Điểm số\nX: {self.X_score}\nO: {self.O_score}"
         self.canvas.create_text(size_of_board / 2, size_of_board / 2, font="Arial 20 bold", fill="black", text=score_text)
 
         # Tọa độ nút
