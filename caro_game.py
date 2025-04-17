@@ -1,11 +1,14 @@
 from tkinter import *
-import os
+import subprocess
 
 def play_with_computer():
-    os.system("python caro_bot.py")
+    subprocess.Popen(["python", "caro_bot.py"])
+    window.destroy()  # đóng màn hình chính khi bắt đầu chơi
 
 def play_with_friend():
-    os.system("python caro_2players.py")
+    subprocess.Popen(["python", "caro_2players.py"])
+    window.destroy()
+
 
 def show_guide():
     guide = Toplevel(window)
