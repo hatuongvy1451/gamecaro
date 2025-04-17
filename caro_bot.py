@@ -48,6 +48,9 @@ class TicTacToeAI:
         self.O_wins = False
         self.tie = False
         self.winning_cells = []
+        self.window.bind("<Motion>", self.on_hover_buttons)
+        self.hover_state = None
+
 
     def mainloop(self):
         self.window.mainloop()
@@ -141,52 +144,70 @@ class TicTacToeAI:
         self.canvas.delete("all")
         self.canvas.create_text(size_of_board / 2, size_of_board / 4, font="Arial 30 bold", fill=color, text=text)
 
-        score_text = f"Điểm số:\nX: {self.X_score}\nO: {self.O_score}"
+        # Hiển thị điểm số
+        score_text = f"Điểm số - X: {self.X_score} | O: {self.O_score}"
         self.canvas.create_text(size_of_board / 2, size_of_board / 2, font="Arial 20 bold", fill="black", text=score_text)
 
-        btn_width, btn_height = 150, 50
+        # Tọa độ nút
+        btn_width = 150
+        btn_height = 50
 
-        # Chơi lại
-        self.reset_coords = (
-            size_of_board / 2 - btn_width / 2, size_of_board / 1.5 - btn_height / 2,
-            size_of_board / 2 + btn_width / 2, size_of_board / 1.5 + btn_height / 2
-        )
-        self.canvas.create_rectangle(*self.reset_coords, fill="white", outline="green", width=3, tags="reset_box")
-        self.canvas.create_text(size_of_board / 2, size_of_board / 1.5, text="Chơi lại", fill="green",
+        # Vẽ nút "Chơi lại"
+        x1 = size_of_board / 2 - btn_width / 2
+        y1 = size_of_board / 1.5 - btn_height / 2
+        x2 = x1 + btn_width
+        y2 = y1 + btn_height
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill="white", outline="green", width=3, tags="reset_box")
+        self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text="Chơi lại", fill="green",
                                 font="Arial 20 bold", tags="reset")
 
-        # Thoát
-        self.exit_coords = (
-            size_of_board / 2 - btn_width / 2, size_of_board / 1.3 - btn_height / 2,
-            size_of_board / 2 + btn_width / 2, size_of_board / 1.3 + btn_height / 2
-        )
-        self.canvas.create_rectangle(*self.exit_coords, fill="white", outline="red", width=3, tags="exit_box")
-        self.canvas.create_text(size_of_board / 2, size_of_board / 1.3, text="Thoát", fill="red",
+        # Vẽ nút "Thoát"
+        x1 = size_of_board / 2 - btn_width / 2
+        y1 = size_of_board / 1.3 - btn_height / 2
+        x2 = x1 + btn_width
+        y2 = y1 + btn_height
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill="white", outline="red", width=3, tags="exit_box")
+        self.canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text="Thoát", fill="red",
                                 font="Arial 20 bold", tags="exit")
 
-        self.canvas.tag_bind("reset", "<Button-1>", self.restart_game)
-        self.canvas.tag_bind("exit", "<Button-1>", self.restart_game)
-        self.canvas.bind("<Motion>", self.on_hover_buttons)
-
+        self.window.bind("<Button-1>", self.restart_game)
         self.reset_board = True
 
     def on_hover_buttons(self, event):
+        if not self.reset_board:
+            return
+
         x, y = event.x, event.y
+        btn_width = 150
+        btn_height = 50
 
-        def in_rect(coords):
-            x1, y1, x2, y2 = coords
-            return x1 <= x <= x2 and y1 <= y <= y2
+        # Vị trí nút
+        rx1 = size_of_board / 2 - btn_width / 2
+        ry1 = size_of_board / 1.5 - btn_height / 2
+        rx2 = rx1 + btn_width
+        ry2 = ry1 + btn_height
 
-        # Hover effect
-        if in_rect(self.reset_coords):
-            self.canvas.itemconfig("reset_box", fill="#e0ffe0")  # xanh nhạt
+        ex1 = size_of_board / 2 - btn_width / 2
+        ey1 = size_of_board / 1.3 - btn_height / 2
+        ex2 = ex1 + btn_width
+        ey2 = ey1 + btn_height
+
+        # Kiểm tra nếu chuột đang hover vào đâu
+        if rx1 < x < rx2 and ry1 < y < ry2:
+            if self.hover_state != 'reset':
+                self.canvas.itemconfig("reset_box", fill="#ccffcc")  # nền xanh nhạt
+                self.canvas.itemconfig("exit_box", fill="white")     # khôi phục nút kia
+                self.hover_state = 'reset'
+        elif ex1 < x < ex2 and ey1 < y < ey2:
+            if self.hover_state != 'exit':
+                self.canvas.itemconfig("exit_box", fill="#ffcccc")   # nền đỏ nhạt
+                self.canvas.itemconfig("reset_box", fill="white")    # khôi phục nút kia
+                self.hover_state = 'exit'
         else:
-            self.canvas.itemconfig("reset_box", fill="white")
-
-        if in_rect(self.exit_coords):
-            self.canvas.itemconfig("exit_box", fill="#ffe0e0")  # đỏ nhạt
-        else:
-            self.canvas.itemconfig("exit_box", fill="white")
+            if self.hover_state is not None:
+                self.canvas.itemconfig("reset_box", fill="white")
+                self.canvas.itemconfig("exit_box", fill="white")
+                self.hover_state = None
 
 
     def restart_game(self, event):
@@ -221,6 +242,7 @@ class TicTacToeAI:
         elif ex1 < x < ex2 and ey1 < y < ey2:
             self.window.destroy()
             subprocess.Popen([sys.executable, "caro_game.py"], shell=True)
+
 
 
     def click(self, event):
@@ -267,7 +289,6 @@ class HeuristicAI:
         }
 
     def evaluate_direction(self, x, y, dx, dy, player):
-        max_len = 0
         count = 1  # vị trí (x, y)
         open_ends = 0
 
