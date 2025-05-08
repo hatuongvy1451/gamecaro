@@ -4,52 +4,62 @@ import subprocess
 import numpy as np
 import tkinter as tk
 from tkinter import messagebox
+import logging
+
+# Thiết lập logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Constants
-size_of_board = 750  # Kích thước bàn cờ
-grid_size = 15  # Số ô cờ
-cell_size = size_of_board // grid_size  # Kích thước mỗi ô cờ
-symbol_size = cell_size // 3  # Kích thước biểu tượng X, O
-symbol_thickness = 8  # Độ dày đường kẻ biểu tượng
+size_of_board = 600  # Giảm từ 750 xuống 600
+grid_size = 15
+cell_size = size_of_board // grid_size  # 600 // 15 = 40
+symbol_size = cell_size // 3  # 40 // 3 ≈ 13
+symbol_thickness = 6  # Giảm từ 8 xuống 6
 symbol_X_color = (238, 64, 53)  # Màu của X
 symbol_O_color = (4, 146, 207)  # Màu của O
-symbol_green_color = '#7BC043'  # Màu xanh cho chiến thắng
+symbol_green_color = (123, 192, 67)  # Màu xanh cho chiến thắng (#7BC043)
 line_color = (0, 173, 181)  # Màu của các đường kẻ lưới
 bg_color = (240, 248, 255)  # Màu nền
 hover_color = (200, 220, 255)  # Màu nền khi di chuột qua
-header_height = 80  # Chiều cao của phần tiêu đề
-is_sound_on = sys.argv[1] == "True"
+header_height = 60  # Giảm từ 80 xuống 60
+
+# Kiểm tra sys.argv để tránh lỗi IndexError
+is_sound_on = sys.argv[1] == "True" if len(sys.argv) > 1 else True
 
 pygame.init()
 pygame.mixer.init()
 
 if not is_sound_on:
-    pygame.mixer.pause()  
+    pygame.mixer.pause()
 else:
     pygame.mixer.unpause()
 
-# Tải âm thanh thắng
+# Tải âm thanh với xử lý lỗi
 if is_sound_on:
-    win_sound = pygame.mixer.Sound("sounds/win.wav")
-    win_sound_played = False
-
-    click_sound = pygame.mixer.Sound("sounds/click.wav")
+    try:
+        win_sound = pygame.mixer.Sound("sounds/win.wav")
+        win_sound_played = False
+        click_sound = pygame.mixer.Sound("sounds/click.wav")
+    except FileNotFoundError as e:
+        logging.error(f"Sound file not found: {e}. Disabling sound.")
+        is_sound_on = False
+        pygame.mixer.pause()
 else:
-    pygame.mixer.pause() 
+    pygame.mixer.pause()
 
 screen = pygame.display.set_mode((size_of_board, size_of_board + header_height))
 pygame.display.set_caption('🎮 Game Cờ Caro 2 Người')
-font = pygame.font.SysFont("Tahoma", 35, bold=True)
-small_font = pygame.font.SysFont("Tahoma", 25)
-font_bold = pygame.font.SysFont("Tahoma", 25, bold=True)
-font_icon = pygame.font.SysFont("Segoe UI Emoji", 35)
+font = pygame.font.SysFont("Tahoma", 28, bold=True)  # Giảm từ 35 xuống 28
+small_font = pygame.font.SysFont("Tahoma", 20)  # Giảm từ 25 xuống 20
+font_bold = pygame.font.SysFont("Tahoma", 20, bold=True)  # Giảm từ 25 xuống 20
+font_icon = pygame.font.SysFont("Segoe UI Emoji", 28)  # Giảm từ 35 xuống 28
 
 # Vẽ tiêu đề của game
 def draw_header(player_X_turn):
     pygame.draw.rect(screen, (0, 173, 181), (0, 0, size_of_board, header_height))
     text = f"Lượt: {'Người chơi 1 (X)' if player_X_turn else 'Người chơi 2 (O)'}"
     render = font.render(text, True, (255, 255, 255))
-    screen.blit(render, (20, header_height // 2 - render.get_height() // 2))
+    screen.blit(render, (15, header_height // 2 - render.get_height() // 2))
 
 # Vẽ lưới bàn cờ
 def draw_grid(mouse_pos):
@@ -97,8 +107,8 @@ def draw_win_line(winning_positions):
         y = row * cell_size + header_height
         rect = pygame.Rect(x, y, cell_size, cell_size)
         pygame.draw.rect(screen, symbol_green_color, rect)
-    pygame.display.update() 
-    pygame.time.wait(1200)  
+    pygame.display.update()
+    pygame.time.wait(1200)
 
 # Kiểm tra nếu có hòa
 def is_tie(board):
@@ -122,25 +132,25 @@ def display_result(text, score_X, score_O):
     emoji_text = font_icon.render(emoji, True, result_color)
     result_text = font.render(text[2:], True, result_color)
 
-    screen.blit(emoji_text, (size_of_board // 2 - emoji_text.get_width() // 2 - result_text.get_width() // 2 - 20, size_of_board // 2 - 80))
-    screen.blit(result_text, (size_of_board // 2 - result_text.get_width() // 2, size_of_board // 2 - 80))
+    screen.blit(emoji_text, (size_of_board // 2 - emoji_text.get_width() // 2 - result_text.get_width() // 2 - 15, size_of_board // 2 - 60))
+    screen.blit(result_text, (size_of_board // 2 - result_text.get_width() // 2, size_of_board // 2 - 60))
 
     score_header_text = font_bold.render("Điểm số:", True, (0, 0, 0))
     screen.blit(score_header_text, (size_of_board // 2 - score_header_text.get_width() // 2, size_of_board // 2 + 10))
 
-    score_margin = 10
+    score_margin = 8
     score_text_X = small_font.render(f"Người chơi 1 (X): {score_X}", True, symbol_X_color)
-    screen.blit(score_text_X, (size_of_board // 2 - score_text_X.get_width() // 2, size_of_board // 2 + 40 + score_margin))
+    screen.blit(score_text_X, (size_of_board // 2 - score_text_X.get_width() // 2, size_of_board // 2 + 30 + score_margin))
 
     score_text_O = small_font.render(f"Người chơi 2 (O): {score_O}", True, symbol_O_color)
-    screen.blit(score_text_O, (size_of_board // 2 - score_text_O.get_width() // 2, size_of_board // 2 + 70 + score_margin))
+    screen.blit(score_text_O, (size_of_board // 2 - score_text_O.get_width() // 2, size_of_board // 2 + 50 + score_margin))
 
-    button_width = 140
-    button_height = 50
-    button_spacing = 40
+    button_width = 120  # Giảm từ 140 xuống 120
+    button_height = 40  # Giảm từ 50 xuống 40
+    button_spacing = 30  # Giảm từ 40 xuống 30
     total_width = button_width * 2 + button_spacing
     start_x = size_of_board // 2 - total_width // 2
-    y_position = size_of_board // 2 + 150
+    y_position = size_of_board // 2 + 120
 
     play_again_rect = pygame.Rect(start_x, y_position, button_width, button_height)
     quit_rect = pygame.Rect(start_x + button_width + button_spacing, y_position, button_width, button_height)
@@ -181,7 +191,7 @@ def main():
     root = tk.Tk()
     root.withdraw()  # Giấu cửa sổ tkinter
 
-    global win_sound_played
+    global is_sound_on, win_sound_played
 
     while running:
         mouse_pos = pygame.mouse.get_pos()  # Vị trí chuột
@@ -215,12 +225,12 @@ def main():
             if event.type == pygame.QUIT:
                 if messagebox.askokcancel("Xác nhận thoát", "Bạn có chắc chắn muốn thoát khỏi trò chơi không?"):
                     if is_sound_on:
-                        click_sound.play() 
+                        click_sound.play()
                         pygame.time.wait(300)
                     running = False
                 else:
                     if is_sound_on:
-                        click_sound.play()  
+                        click_sound.play()
                         pygame.time.wait(300)
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -229,10 +239,12 @@ def main():
                     if y > header_height:
                         col = x // cell_size
                         row = (y - header_height) // cell_size
-                        if board[row][col] == 0:
+                        # Kiểm tra chỉ số hợp lệ
+                        if 0 <= row < grid_size and 0 <= col < grid_size and board[row][col] == 0:
                             board[row][col] = -1 if player_X_turn else 1
                             if is_sound_on:
                                 click_sound.play()
+                            logging.debug(f"Player move: row={row}, col={col}, board=\n{board}")
                             winner_positions = is_winner(board, board[row][col])
                             if winner_positions:
                                 winner = player_X_turn  # Lưu người thắng
@@ -247,6 +259,8 @@ def main():
                                 winner = None  # Hòa không có người thắng
                             else:
                                 player_X_turn = not player_X_turn
+                        else:
+                            logging.debug(f"Invalid move: row={row}, col={col}, occupied={board[row][col] != 0}")
                 else:
                     if play_btn and play_btn.collidepoint(event.pos):
                         board = np.zeros((grid_size, grid_size))
@@ -270,4 +284,9 @@ def main():
     sys.exit()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.error(f"Error in main loop: {e}")
+        pygame.quit()
+        sys.exit(1)
